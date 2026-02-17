@@ -1,0 +1,21 @@
+# Binaries (ไฟล์ที่ Compile แล้ว ไม่ต้องเอาขึ้น)
+/bin
+/dist
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Dependencies (Go จะโหลดให้เอง ไม่ต้องเอาขึ้น)
+/vendor
+
+# IDE & OS Files
+.idea
+.vscode
+.DS_Store
+
+# Secrets & Config (*** ห้ามหลุดเด็ดขาด ***)
+.env
+.yaml
+./config/*.yaml
+./config/*.env

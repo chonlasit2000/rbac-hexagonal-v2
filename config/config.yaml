@@ -1,0 +1,19 @@
+server:
+  port: "3000"
+  jwt_secret: "a77d40f0f27709755c453332434f4d5b"
+
+database:
+  host: "localhost"
+  port: "5432"
+  user: "admin"
+  password: "admin" # แก้ให้ตรงกับเครื่องคุณ
+  dbname: "rbac_db"
+  sslmode: "disable" # Localhost ปิด ssl ไว้ก่อน
+  timezone: "Asia/Bangkok"
+
+redis:
+  host: "localhost"
+  port: "6379"
+  password: ""
+
+
