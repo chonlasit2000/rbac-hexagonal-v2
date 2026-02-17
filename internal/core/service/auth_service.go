@@ -12,12 +12,12 @@ import (
 )
 
 type authService struct {
-	repo      port.UserRepository
+	userRepo  port.UserRepository
 	jwtSecret string
 }
 
 func NewAuthService(repo port.UserRepository, secret string) port.AuthService {
-	return &authService{repo: repo, jwtSecret: secret}
+	return &authService{userRepo: repo, jwtSecret: secret}
 }
 
 func (s *authService) Register(ctx context.Context, req *port.RegisterReq) error {
@@ -35,12 +35,12 @@ func (s *authService) Register(ctx context.Context, req *port.RegisterReq) error
 	}
 
 	// 3. Save to Repo
-	return s.repo.CreateUser(ctx, user)
+	return s.userRepo.Create(ctx, user)
 }
 
 func (s *authService) Login(ctx context.Context, req *port.LoginReq) (*port.AuthResponse, error) {
 	// 1. Find User
-	user, err := s.repo.GetUserByUsername(ctx, req.Username)
+	user, err := s.userRepo.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, errors.New("invalid credentials")
 	}

@@ -6,6 +6,7 @@ toolchain go1.24.7
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
+	github.com/mikespook/gorbac/v3 v3.0.0-20250828105311-80b2c9ae5182
 	golang.org/x/crypto v0.48.0
 	gorm.io/gorm v1.31.1
 )
