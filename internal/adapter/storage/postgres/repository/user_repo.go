@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/chonlasit2000/rbac-hexagonal-gorbac/internal/core/domain"
 	"github.com/chonlasit2000/rbac-hexagonal-gorbac/internal/core/port"
@@ -50,4 +51,21 @@ func (r *userRepo) AddAccosiateRole(ctx context.Context, userID string, roleID s
 	}
 	// จับคู่ User <-> Role
 	return r.db.WithContext(ctx).Model(&user).Association("Roles").Append(&role)
+}
+
+func (r *userRepo) RemoveAssociateRole(ctx context.Context, userID string, roleID string) error {
+	var user domain.User
+	if err := r.db.WithContext(ctx).Where("uid = ?", userID).First(&user).Error; err != nil {
+		return err
+	}
+	var role domain.Role
+	if err := r.db.WithContext(ctx).Where("uid = ?", roleID).First(&role).Error; err != nil {
+		return err
+	}
+	count := r.db.WithContext(ctx).Model(&user).Where("uid = ?", roleID).Association("Roles").Count()
+	if count == 0 {
+		return fmt.Errorf("user does not have role: %s", role.Name)
+	}
+	// ลบความสัมพันธ์ในตาราง user_roles
+	return r.db.WithContext(ctx).Model(&user).Association("Roles").Delete(&role)
 }

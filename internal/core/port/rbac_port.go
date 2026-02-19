@@ -9,6 +9,8 @@ type RBACService interface {
 	CreatePermission(req *CreatePermReq) error
 	AssignPermissionToRole(req *AssignPermReq) error
 	AssignRoleToUser(req *AssignRoleReq) error
+	RemovePermissionFromRole(req *UnassignPermReq) error
+	RemoveRoleFromUser(req *UnassignRoleReq) error
 }
 
 type CreateRoleReq struct {
@@ -25,6 +27,16 @@ type AssignPermReq struct {
 }
 
 type AssignRoleReq struct {
+	UserID   string `json:"user_id"`
+	RoleName string `json:"role_name"`
+}
+
+type UnassignPermReq struct {
+	RoleName string `json:"role_name"`
+	PermName string `json:"perm_name"`
+}
+
+type UnassignRoleReq struct {
 	UserID   string `json:"user_id"`
 	RoleName string `json:"role_name"`
 }

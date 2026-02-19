@@ -56,3 +56,25 @@ func (h *RBACHandler) AssignRole(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"message": "Role assigned to User"})
 }
+
+func (h *RBACHandler) RemovePermission(c *fiber.Ctx) error {
+	var req port.UnassignPermReq
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "bad request"})
+	}
+	if err := h.svc.RemovePermissionFromRole(&req); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Permission removed from Role"})
+}
+
+func (h *RBACHandler) RemoveRole(c *fiber.Ctx) error {
+	var req port.UnassignRoleReq
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "bad request"})
+	}
+	if err := h.svc.RemoveRoleFromUser(&req); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "Role removed from User"})
+}

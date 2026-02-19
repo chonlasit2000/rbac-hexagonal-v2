@@ -12,6 +12,7 @@ type RoleRepository interface {
 	GetRoleByUserUID(ctx context.Context, uid string) ([]domain.Role, error)
 	GetRoleByName(ctx context.Context, name string) (*domain.Role, error)
 	AddAccosiatePermission(ctx context.Context, roleID string, permID string) error
+	RemoveAssociatePermission(ctx context.Context, roleID string, permID string) error
 }
 
 type RoleService interface {

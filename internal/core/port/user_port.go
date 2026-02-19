@@ -11,4 +11,5 @@ type UserRepository interface {
 	GetUserByUID(ctx context.Context, uid string) (*domain.User, error)
 	GetUserByUsername(ctx context.Context, username string) (*domain.User, error)
 	AddAccosiateRole(ctx context.Context, userID string, roleID string) error
+	RemoveAssociateRole(ctx context.Context, userID string, roleID string) error
 }

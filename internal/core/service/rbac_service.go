@@ -188,3 +188,46 @@ func (s *rbacService) AssignRoleToUser(req *port.AssignRoleReq) error {
 
 	return nil
 }
+
+// 1. ยกเลิก Permission ออกจาก Role
+func (s *rbacService) RemovePermissionFromRole(req *port.UnassignPermReq) error {
+	role, err := s.roleRepo.GetRoleByName(context.Background(), req.RoleName)
+	if err != nil {
+		return err
+	}
+
+	perm, err := s.permissionRepo.GetPermissionByName(context.Background(), req.PermName)
+	if err != nil {
+		return err
+	}
+
+	if err := s.roleRepo.RemoveAssociatePermission(context.Background(), role.Uid.String(), perm.Uid.String()); err != nil {
+		return err
+	}
+
+	// *** Policy เปลี่ยน ต้อง Reload Gorbac (Memory Cache) ใหม่ ***
+	return s.LoadPolicy()
+}
+
+// 2. ปลด Role ออกจาก User
+func (s *rbacService) RemoveRoleFromUser(req *port.UnassignRoleReq) error {
+	user, err := s.userRepo.GetUserByUID(context.Background(), req.UserID)
+	if err != nil {
+		return err
+	}
+
+	role, err := s.roleRepo.GetRoleByName(context.Background(), req.RoleName)
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepo.RemoveAssociateRole(context.Background(), user.Uid.String(), role.Uid.String()); err != nil {
+		return err
+	}
+
+	// *** สิทธิ์ของ User คนนี้เปลี่ยน ต้องลบ Cache ทิ้ง (Redis Cache) ***
+	cacheKey := fmt.Sprintf("rbac:user:%s:roles", req.UserID)
+	s.redis.Del(context.Background(), cacheKey)
+
+	return nil
+}
