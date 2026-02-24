@@ -231,3 +231,15 @@ func (s *rbacService) RemoveRoleFromUser(req *port.UnassignRoleReq) error {
 
 	return nil
 }
+
+func (s *rbacService) GetAllRoles() ([]domain.Role, error) {
+	return s.roleRepo.GetAll(context.Background())
+}
+
+func (s *rbacService) GetAllPermissions() ([]domain.Permission, error) {
+	return s.permissionRepo.GetAll(context.Background())
+}
+
+func (s *rbacService) GetUserRoles(userID string) ([]domain.Role, error) {
+	return s.roleRepo.GetRoleByUserUID(context.Background(), userID)
+}

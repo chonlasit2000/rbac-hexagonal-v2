@@ -3,6 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/chonlasit2000/rbac-hexagonal-gorbac/config"
 	"github.com/chonlasit2000/rbac-hexagonal-gorbac/internal/adapter/handler/http"
@@ -38,12 +41,12 @@ func main() {
 	fmt.Println("Successfully connected to Redis" + rdb.Options().Addr)
 
 	// 4. Auto Migrate (สร้างตาราง)
-	db.AutoMigrate(
-		&domain.User{},
-		&domain.Role{},
-		&domain.Permission{},
-	)
-	SeedData(db)
+	// db.AutoMigrate(
+	// 	&domain.User{},
+	// 	&domain.Role{},
+	// 	&domain.Permission{},
+	// )
+	// SeedData(db)
 
 	// --- Repository Init ---
 	userRepo := repository.NewUserRepository(db)
@@ -78,32 +81,60 @@ func main() {
 	auth.Post("/login", authHandler.Login)
 
 	// --- Protected Routes ---
-
-	// 1. Admin Dashboard (Test Permission)
 	api.Get("/admin/dashboard", guard("dashboard:view"), func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "Hello Admin! This is secret dashboard."})
 	})
-
-	// 2. User Profile (Test Permission)
 	api.Get("/profile", guard("profile:view"), func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"message": "Hello User! This is your profile."})
 	})
 
-	// --- RBAC Management Routes (New!) ---
-	// เฉพาะ Admin เท่านั้นที่เข้ามาจัดการ Role/Permission ได้
-	// ต้องมีสิทธิ์ "system:admin" (ซึ่งเรา Seed ให้ role:admin มีสิทธิ์นี้แล้ว)
+	// --- RBAC Management Routes ---
 	adminPanel := api.Group("/admin/panel", guard("system:admin"))
 
-	adminPanel.Post("/roles", rbacHandler.CreateRole)                     // สร้าง Role ใหม่
-	adminPanel.Post("/permissions", rbacHandler.CreatePermission)         // สร้าง Permission ใหม่
-	adminPanel.Post("/roles/assign-perm", rbacHandler.AssignPermission)   // จับคู่ Role <-> Permission
-	adminPanel.Post("/users/assign-role", rbacHandler.AssignRole)         // จับคู่ User <-> Role
-	adminPanel.Delete("/roles/remove-perm", rbacHandler.RemovePermission) // เอาสิทธิ์ออกจาก Role
-	adminPanel.Delete("/users/remove-role", rbacHandler.RemoveRole)       // เอา Role ออกจาก User
+	// GET Routes สำหรับดูข้อมูล (เพิ่มเข้ามาใหม่)
+	adminPanel.Get("/roles", rbacHandler.GetRoles)
+	adminPanel.Get("/permissions", rbacHandler.GetPermissions)
+	adminPanel.Get("/users/:id/roles", rbacHandler.GetUserRoles) // สังเกตการใช้ :id
 
-	log.Fatal(app.Listen(":" + cfg.Server.Port))
+	// POST / DELETE Routes (ของเดิม)
+	adminPanel.Post("/roles", rbacHandler.CreateRole)
+	adminPanel.Post("/permissions", rbacHandler.CreatePermission)
+	adminPanel.Post("/roles/assign-perm", rbacHandler.AssignPermission)
+	adminPanel.Post("/users/assign-role", rbacHandler.AssignRole)
+	adminPanel.Delete("/roles/remove-perm", rbacHandler.RemovePermission)
+	adminPanel.Delete("/users/remove-role", rbacHandler.RemoveRole)
+
+	// ==========================================
+	// 🛑 Graceful Shutdown Setup
+	// ==========================================
+
+	// สร้าง Channel ไว้รอรับสัญญาณการปิดโปรแกรม (เช่น กด Ctrl+C หรือ Docker สั่งหยุด)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	// สั่งให้ Goroutine รอฟังเสียงสัญญาณ
+	go func() {
+		<-c // รอจนกว่าจะมีสัญญาณเข้ามา
+		fmt.Println("\n🛑 Gracefully shutting down server...")
+
+		// ปิด Fiber App อย่างนุ่มนวล (รอให้ Request ที่ค้างอยู่ ทำงานเสร็จก่อน)
+		if err := app.Shutdown(); err != nil {
+			log.Printf("Error shutting down server: %v", err)
+		}
+
+		// (Optional) สั่งปิด Database และ Redis
+		sqlDB, _ := db.DB()
+		sqlDB.Close()
+		rdb.Close()
+		fmt.Println("✅ All connections closed. Goodbye!")
+	}()
+
+	// Start Server (เปลี่ยนจาก log.Fatal เป็นการเช็ค err ธรรมดา เพื่อให้บรรทัดข้างบนได้ทำงาน)
+	fmt.Printf("🚀 Server is starting on port %s\n", cfg.Server.Port)
+	if err := app.Listen(":" + cfg.Server.Port); err != nil {
+		log.Panic(err) // ถ้า Port ชน หรือ Start ไม่ขึ้นตั้งแต่แรก ค่อย Panic
+	}
 }
-
 func SeedData(db *gorm.DB) {
 	var count int64
 	db.Model(&domain.Role{}).Count(&count)

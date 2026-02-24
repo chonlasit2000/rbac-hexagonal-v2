@@ -1,5 +1,7 @@
 package port
 
+import "github.com/chonlasit2000/rbac-hexagonal-gorbac/internal/core/domain"
+
 type RBACService interface {
 	LoadPolicy() error
 	CheckAccess(userID string, requiredPerm string) (bool, error)
@@ -11,6 +13,10 @@ type RBACService interface {
 	AssignRoleToUser(req *AssignRoleReq) error
 	RemovePermissionFromRole(req *UnassignPermReq) error
 	RemoveRoleFromUser(req *UnassignRoleReq) error
+
+	GetAllRoles() ([]domain.Role, error)
+	GetAllPermissions() ([]domain.Permission, error)
+	GetUserRoles(userID string) ([]domain.Role, error)
 }
 
 type CreateRoleReq struct {

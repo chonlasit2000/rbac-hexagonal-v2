@@ -78,3 +78,28 @@ func (h *RBACHandler) RemoveRole(c *fiber.Ctx) error {
 	}
 	return c.JSON(fiber.Map{"message": "Role removed from User"})
 }
+
+func (h *RBACHandler) GetRoles(c *fiber.Ctx) error {
+	roles, err := h.svc.GetAllRoles()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(roles)
+}
+
+func (h *RBACHandler) GetPermissions(c *fiber.Ctx) error {
+	perms, err := h.svc.GetAllPermissions()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(perms)
+}
+
+func (h *RBACHandler) GetUserRoles(c *fiber.Ctx) error {
+	userID := c.Params("id") // รับ id มาจาก URL Parameters
+	roles, err := h.svc.GetUserRoles(userID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(roles)
+}
